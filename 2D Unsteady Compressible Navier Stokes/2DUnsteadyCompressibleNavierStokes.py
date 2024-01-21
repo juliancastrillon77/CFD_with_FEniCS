@@ -28,12 +28,12 @@ OutFileT  = 'Results/Temperature.pvd' # Output file temperature
 Mesh = fe.Mesh(MeshFile)     # Create the mesh and import mesh into the solver
 
 # Air Properties at 25ºC 1atm
-mu = fe.Constant(1/500)     # Dynamic viscosity [kg/ms]
+mu = fe.Constant(1/500)  # Dynamic viscosity [kg/ms]
 k  = fe.Constant(0.1)    # Thermal conductivity [W/mK]
-cp = fe.Constant(100)       # Heat capacity constant pressure [J/kgK]
-cv = fe.Constant(718)        # Heat capacity constant volume[J/kgK]
-RRR  = fe.Constant(287)        # Gas constant [J/kgK]
-B  = fe.Constant(1)          # Coefficient of thermal expansion
+cp = fe.Constant(100)    # Heat capacity constant pressure [J/kgK]
+cv = fe.Constant(718)    # Heat capacity constant volume[J/kgK]
+RRR  = fe.Constant(287)  # Gas constant [J/kgK]
+B  = fe.Constant(1)      # Coefficient of thermal expansion
 b  = fe.Constant((0, 0)) # Body forces []
 rho = fe.Constant(1)
 
