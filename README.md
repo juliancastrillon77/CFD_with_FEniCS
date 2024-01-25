@@ -10,7 +10,7 @@ I welcome contributions from the community. Whether it's bug fixes, new features
 This repository is set up by folders. The title of each folder gives a brief description of what CFD model is to be solved. In general, each folder will contain 4 files. One main .py file, two .xml files containing the geometrical and mesh information and a Results folder. The Results folder contains the solution of the variables that is solved in each model and stored in a .pvd and .vtu file later to be analyzed in ParaView.
 In the repository there's a folder called ZMesh that contains the code for the mesh generation through Gmsh.
 
-It is worth noting that all the software used is open-source (Python,Fenics,Paraview & Gmsh).
+It is worth noting that all the software used is open-source (Python, Fenics, Paraview & Gmsh).
 
 FEniCS:
 https://fenicsproject.org/
