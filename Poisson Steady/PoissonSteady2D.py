@@ -8,11 +8,11 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-MeshFile  = 'Mesh.xml' # Input mesh
+MeshFile  = 'Mesh.xml'              # Input mesh
 FacetFile = 'Mesh_facet_region.xml' # Input mesh boundaries
-OutFileu  = 'Results/u.pvd'  # Output Storage
+OutFileu  = 'Results/u.pvd'         # Output Storage
 
-Mesh = fe.Mesh(MeshFile)     # Create the mesh and import mesh into the solver
+Mesh = fe.Mesh(MeshFile)
 FS = fe.FunctionSpace(Mesh, 'Lagrange', 1)
 
 u = fe.TrialFunction(FS)
@@ -51,8 +51,8 @@ TF = fe.Function(FS)
 Problem = fe.LinearVariationalProblem(a, -b, TF, BCs)
 Solver  = fe.LinearVariationalSolver(Problem)
 
-Solver.parameters['linear_solver'] = 'cg'
-Solver.parameters['preconditioner']  = 'ilu'
+Solver.parameters['linear_solver']  = 'cg'
+Solver.parameters['preconditioner'] = 'ilu'
 Solver.parameters['krylov_solver']['monitor_convergence'] = True
 Solver.parameters['krylov_solver']['relative_tolerance'] = fe.Constant(1e-6)
 Solver.parameters['krylov_solver']['absolute_tolerance'] = fe.Constant(1e-8)

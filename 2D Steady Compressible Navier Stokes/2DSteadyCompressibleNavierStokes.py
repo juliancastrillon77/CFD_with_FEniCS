@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Steady Compressible Navier Stokes Equation
+# CFD - 2D Steady Compressible Navier Stokes Equations
 
 import os
 import fenics as fe
@@ -8,66 +8,50 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-#################################################################################################
-## Definition of some global FEniCS optimization parameters #####################################
 fe.set_log_level(fe.LogLevel.PROGRESS)
 fe.parameters['form_compiler']['representation']     = 'uflacs'
 fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-#################################################################################################
-## Parameters ###################################################################################
-MeshFile  = 'Mesh.xml'
-FacetFile = 'Mesh_facet_region.xml'
-OutFileV  = 'Results/Velocity.pvd'
-OutFileP  = 'Results/Pressure.pvd'
-OutFileT  = 'Results/Temperature.pvd'
+Mesh = fe.Mesh('Mesh.xml')
 
-Mesh = fe.Mesh(MeshFile)
-
+vi = 1 # Inlet velocity [m/s]
 ## Air Properties at 25ºC 1atm
-mu = fe.Constant(0.1849)     # Dynamic viscosity [kg/ms]
-k  = fe.Constant(0.02551)    # Thermal conductivity [W/mK]
-cp = fe.Constant(1007)       # Heat capacity constant pressure [J/kgK]
-cv = fe.Constant(718)        # Heat capacity constant volume[J/kgK]
-R  = fe.Constant(287)        # Gas constant [J/kgK]
-B  = fe.Constant(1)          # Coefficient of thermal expansion
-b  = fe.Constant((0, -9.81)) # Body forces []
-
-U0  = 1
-
-Velo  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
-Pres  = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
-Temp  = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
-M     = fe.MixedElement([Velo, Pres, Temp])
-FS    = fe.FunctionSpace(Mesh, M)
+mu = fe.Constant(0.1849)     # Dynamic viscosity                [kg/ms]
+k  = fe.Constant(0.02551)    # Thermal conductivity             [W/mK]
+cp = fe.Constant(1007)       # Heat capacity constant pressure  [J/kgK]
+cv = fe.Constant(718)        # Heat capacity constant volume    [J/kgK]
+RR = fe.Constant(287)        # Gas constant                     [J/kgK]
+B  = fe.Constant(1)          # Coefficient of thermal expansion [-]
+b  = fe.Constant((0, -9.81)) # Body accelerations               [m/s2]
+           
+Vel  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
+Pres = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
+Temp = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
+M    = fe.MixedElement([Vel, Pres, Temp])
+FS   = fe.FunctionSpace(Mesh, M)
 
 TF        = fe.TrialFunction(FS)
 (w, q, s) = fe.TestFunctions(FS)
 
 TFsol     = fe.Function(FS)
-(u, P, T) = fe.split(TFsol)
+(v, p, T) = fe.split(TFsol)
 
-#################################################################################################
-## Weak formulation #############################################################################
-WeakForm =   fe.dot(w*P/(R*T),fe.grad(u)*u)*fe.dx \
-           - fe.div(w)*P*fe.dx                                        \
-           - fe.dot(w*P/(R*T),b)*fe.dx              \
-           + mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx                 \
+WeakForm =   fe.dot(w*p/(RR*T),fe.grad(v)*v)*fe.dx     \
+           - fe.div(w)*p*fe.dx                        \
+           - fe.dot(w*p/(RR*T),b)*fe.dx                \
+           + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
                \
+           + q*fe.div(v)*fe.dx \
                \
-           + q*fe.div(u)*fe.dx    \
-               \
-               \
-           - s*fe.dot(u,fe.grad(P))*fe.dx \
-           + (cp/(k))*(P/(R*T))*fe.dot(s,fe.dot(u,fe.grad(T)))*fe.dx \
+           - s*fe.dot(v,fe.grad(p))*fe.dx                            \
+           + (cp/(k))*(p/(RR*T))*fe.dot(s,fe.dot(v,fe.grad(T)))*fe.dx \
            + fe.dot(fe.grad(s),fe.grad(T))*fe.dx
 
-#################################################################################################
-## Boundary Conditions ##########################################################################
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, FacetFile)
-ds = fe.ds(subdomain_data = DomainBoundaries)
+J = fe.derivative(WeakForm, TFsol, TF)  
+
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9
@@ -77,11 +61,11 @@ Circle        = 12
 TriangleLeft  = 13
 TriangleRight = 14
 
-NoSlip     = fe.Constant((0, 0))
-POut       = fe.Constant(0)
-InletFlow  = fe.Constant((U0, 0))
-Temp1      = fe.Constant(293)
-Temp2      = fe.Constant(273)
+NoSlip    = fe.Constant((0, 0))
+POut      = fe.Constant(0)
+InletFlow = fe.Constant((vi, 0))
+Temp1     = fe.Constant(293)
+Temp2     = fe.Constant(273)
 
 EntryBC          = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
 BottomWallBC     = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
@@ -99,29 +83,17 @@ CircleBCT        = fe.DirichletBC(FS.sub(2), Temp1,     DomainBoundaries, Circle
 TriangleLeftBCT  = fe.DirichletBC(FS.sub(2), Temp1,     DomainBoundaries, TriangleLeft)
 TriangleRightBCT = fe.DirichletBC(FS.sub(2), Temp1,     DomainBoundaries, TriangleRight)
 
-
-BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC, CircleBC, TriangleLeftBC, TriangleRightBC, \
+BCs = [EntryBC,  BottomWallBC,  ExitBC,  TopWallBC,  CircleBC,  TriangleLeftBC,  TriangleRightBC, \
        EntryBCT, BottomWallBCT, ExitBCT, TopWallBCT, CircleBCT, TriangleLeftBCT, TriangleRightBCT]
 
-## Boundary check
-#import sys
-#fe.File('BoundaryCheck.pvd') << DomainBoundaries
-#sys.exit()
+InitialVel  = fe.interpolate(fe.Constant((fe.Constant(1.5), fe.Constant(0.2))), FS.sub(0).collapse()) 
+InitialPres = fe.interpolate(fe.Constant(1e-3), FS.sub(1).collapse())
+InitialTemp = fe.interpolate(fe.Constant(273),  FS.sub(1).collapse())
 
-## Initial conditions
-Intu = fe.interpolate(fe.Constant((fe.Constant(1.5), fe.Constant(0.2))), FS.sub(0).collapse()) 
-IntP = fe.interpolate(fe.Constant(1e-3), FS.sub(1).collapse())
-IntT = fe.interpolate(fe.Constant(273),  FS.sub(1).collapse())
+fe.assign(TFsol.sub(0), InitialVel)
+fe.assign(TFsol.sub(1), InitialPres)
+fe.assign(TFsol.sub(2), InitialTemp)
 
-fe.assign(TFsol.sub(0), Intu)
-fe.assign(TFsol.sub(1), IntP)
-fe.assign(TFsol.sub(2), IntT)
-
-## Jacobian
-J = fe.derivative(WeakForm, TFsol, TF)  
-
-#################################################################################################
-## Solver #######################################################################################
 Problem = fe.NonlinearVariationalProblem(WeakForm, TFsol, BCs, J)
 Solver  = fe.NonlinearVariationalSolver(Problem)
 
@@ -132,9 +104,9 @@ Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['maximum_iterations']   = 5
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
-VelFile = fe.File(OutFileV)
-PreFile = fe.File(OutFileP)
-TemFile = fe.File(OutFileT)
+FileVel  = fe.File('Results/Velocity.pvd')
+FilePres = fe.File('Results/Pressure.pvd')
+FileTemp = fe.File('Results/Temperature.pvd')
 
 Solver.solve()
 
@@ -142,10 +114,6 @@ Solver.solve()
 Velocity.rename('Velocity','Velocity')
 Pressure.rename('Pressure','Pressure')
 Temperature.rename('Temperature','Temperature')
-VelFile << Velocity
-PreFile << Pressure
-TemFile << Temperature
-
-#################################################################################################
-## END ##########################################################################################
-#################################################################################################
+FileVel  << Velocity
+FilePres << Pressure
+FileTemp << Temperature

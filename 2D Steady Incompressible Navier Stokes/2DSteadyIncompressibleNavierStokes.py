@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Steady Incompressible Navier Stokes Equation
+# CFD - 2D Steady Incompressible Navier Stokes Equations
 
 import os
 import fenics as fe
@@ -8,53 +8,39 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-#################################################################################################
-## Definition of some global FEniCS optimization parameters #####################################
 fe.set_log_level(fe.LogLevel.PROGRESS)
 fe.parameters['form_compiler']['representation']     = 'uflacs'
 fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-#################################################################################################
-## Parameters ###################################################################################
-MeshFile  = 'Mesh.xml'
-FacetFile = 'Mesh_facet_region.xml'
-OutFileV  = 'Results/Velocity.pvd'
-OutFileP  = 'Results/Pressure.pvd'
+Mesh = fe.Mesh('Mesh.xml')
 
-Mesh = fe.Mesh(MeshFile)
+vi  = 1                       # Inlet velocity [m/s]
+mu  = fe.Constant(1)          # Dynamic viscosity  [kg/ms]
+rho = fe.Constant(10)         # Density            [kg/m3]
+b   = fe.Constant((0, -9.81)) # Body accelerations [m/s2]
 
-U0  = 1
-mu  = fe.Constant(1)
-rho = fe.Constant(10)
-b   = fe.Constant((0, -9.810))
+Vel  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
+Pres = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
+M    = fe.MixedElement([Vel, Pres])
+FS   = fe.FunctionSpace(Mesh, M)
 
-V  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
-P  = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
-M  = fe.MixedElement([V, P])
-FS = fe.FunctionSpace(Mesh, M)
-
-TF     = fe.TrialFunction(FS) # Note(1)
+TF     = fe.TrialFunction(FS)
 (w, q) = fe.TestFunctions(FS)
 
-TFsol  = fe.Function(FS) # Note(1)
-(u, p) = fe.split(TFsol)
+TFsol  = fe.Function(FS)
+(v, p) = fe.split(TFsol)
 
-#################################################################################################
-## Weak formulation #############################################################################
-WeakForm =   rho*fe.inner(w,fe.grad(u)*u)*fe.dx       \
+WeakForm =   rho*fe.inner(w,fe.grad(v)*v)*fe.dx       \
            - fe.div(w)*p*fe.dx                        \
            - rho*fe.dot(w,b)*fe.dx                    \
-           + mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx \
-           + q*fe.div(u)*fe.dx
+           + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
+           + q*fe.div(v)*fe.dx
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
-#################################################################################################
-## Boundary Conditions ##########################################################################
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, FacetFile)
-ds = fe.ds(subdomain_data = DomainBoundaries)
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9
@@ -64,9 +50,9 @@ Circle        = 12
 TriangleLeft  = 13
 TriangleRight = 14
 
-NoSlip     = fe.Constant((0, 0))
-POut       = fe.Constant(0)
-InletFlow  = fe.Constant((U0, 0))
+NoSlip    = fe.Constant((0, 0))
+POut      = fe.Constant(0)
+InletFlow = fe.Constant((vi, 0))
 
 EntryBC         = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
 BottomWallBC    = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
@@ -78,13 +64,6 @@ TriangleRightBC = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, Triangl
 
 BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC, CircleBC, TriangleLeftBC, TriangleRightBC]
 
-## Boundary check
-#import sys
-#fe.File('BoundaryCheck.pvd') << DomainBoundaries
-#sys.exit()
-
-#################################################################################################
-## Solver #######################################################################################
 Problem = fe.NonlinearVariationalProblem(WeakForm, TFsol, BCs, J)
 Solver  = fe.NonlinearVariationalSolver(Problem)
 
@@ -95,22 +74,13 @@ Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['maximum_iterations']   = 7
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
-VelFile = fe.File(OutFileV)
-PreFile = fe.File(OutFileP)
+FileVel  = fe.File('Results/Velocity.pvd')
+FilePres = fe.File('Results/Pressure.pvd')
 
 Solver.solve()
 
 (Velocity, Pressure) = TFsol.split(deepcopy = True)
 Velocity.rename('Velocity','Velocity')
 Pressure.rename('Pressure','Pressure')
-VelFile << Velocity
-PreFile << Pressure
-
-
-# Note(1)
-# - TrialFunction objects must always be used for the unknowns in the problem specification
-#   while Function objects must be used for quantities that are computed.
-
-#################################################################################################
-## END ##########################################################################################
-#################################################################################################
+FileVel  << Velocity
+FilePres << Pressure

@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - Unsteady Incompressible Navier Stokes Equation
+# CFD - 2D Unsteady Incompressible Navier Stokes Equations
 
 import os
 import numpy as np
@@ -19,29 +19,25 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
 #################################################################################################
 ## Parameters ###################################################################################
-MeshFile  = 'Mesh.xml'              # Input mesh
-FacetFile = 'Mesh_facet_region.xml' # Input mesh boundaries
-OutFileV  = 'Results/Velocity.pvd'  # Output Storage
-OutFileP  = 'Results/Pressure.pvd'  # Output Storage
+Mesh = fe.Mesh('Mesh.xml') # Create the mesh and import mesh into the solver
 
-Mesh = fe.Mesh(MeshFile)     # Create the mesh and import mesh into the solver
+dt    = 0.01 # Timestep             [s]
+t_end = 0.5  # Length of simulation [s]
 
-dt    = 0.01                 # Timestep
-t_end = 0.5                  # Length of simulation
-
-U0    = 1                    # Inlet Velocity
-mu    = fe.Constant(1/500)   # Viscosity
-b     = fe.Constant((0, 0))  # Body forces
+vi = 1 # Inlet Velocity [m/s]
+# Fluid Properties
+mu = fe.Constant(1/500)  # Dynamic viscosity  [kg/ms]
+b  = fe.Constant((0, 0)) # Body accelerations [m/s2]
 
 theta = fe.Constant(0.5)      # Crank-Nicholson time-stepping scheme
 n     = fe.FacetNormal(Mesh)  # Normal vector  
 h     = fe.CellDiameter(Mesh) # Mesh size
 
 # Define the mixed vector function space operating on this meshed domain
-V      = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
-P      = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
-M      = fe.MixedElement([V, P])
-FS     = fe.FunctionSpace(Mesh, M) # Function space
+Vel  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
+Pres = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
+M    = fe.MixedElement([Vel, Pres])
+FS   = fe.FunctionSpace(Mesh, M) # Function space
 
 TF     = fe.TrialFunction(FS) # Trial function
 (w, q) = fe.TestFunctions(FS) # Test  functions
@@ -49,24 +45,24 @@ TF     = fe.TrialFunction(FS) # Trial function
 #################################################################################################
 ## Weak formulation #############################################################################
 TFsol  = fe.Function(FS) # Timestep n+1
-(u, p) = fe.split(TFsol)
+(v, p) = fe.split(TFsol)
 
-WeakFormB =  fe.inner(w,fe.grad(u)*u)*fe.dx             \
-            + mu*fe.inner(fe.grad(w), fe.grad(u))*fe.dx \
+WeakFormB =  fe.inner(w,fe.grad(v)*v)*fe.dx             \
+            + mu*fe.inner(fe.grad(w), fe.grad(v))*fe.dx \
             - p*fe.div(w)*fe.dx                         \
-            - q*fe.div(u)*fe.dx                         \
+            - q*fe.div(v)*fe.dx                         \
             - fe.dot(w,b)*fe.dx                         \
 
 TFsol0   = fe.Function(FS) # Timestep n
-(u0, p0) = fe.split(TFsol0)
+(v0, p0) = fe.split(TFsol0)
 
-WeakFormF =   fe.inner(w,fe.grad(u0)*u0)*fe.dx          \
-            + mu*fe.inner(fe.grad(w),fe.grad(u0))*fe.dx \
+WeakFormF =   fe.inner(w,fe.grad(v0)*v0)*fe.dx          \
+            + mu*fe.inner(fe.grad(w),fe.grad(v0))*fe.dx \
             - p*fe.div(w)*fe.dx                         \
-            - q*fe.div(u0)*fe.dx                        \
+            - q*fe.div(v0)*fe.dx                        \
             - fe.dot(w,b)*fe.dx                         \
                 
-WeakForm = fe.inner((u-u0)/dt,w)*fe.dx + (theta)*WeakFormB + (1-theta)*WeakFormF
+WeakForm = fe.inner((v-v0)/dt,w)*fe.dx + (theta)*WeakFormB + (1-theta)*WeakFormF
 
 ### Streamwise Upwind Petrov Galerkin (SUPG) stabilization for convection #######################
 # vnorm = fe.sqrt(fe.dot(u0,u0))
@@ -95,8 +91,7 @@ J = fe.derivative(WeakForm, TFsol, TF) # Jacobian
 
 #################################################################################################
 ## Boundary Conditions ##########################################################################
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, FacetFile)
-ds               = fe.ds(subdomain_data = DomainBoundaries)
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh_facet_region.xml')
 
 # Identification of all correct boundary markers needed for the domain
 Entry         = 8
@@ -107,9 +102,9 @@ Circle        = 12
 TriangleLeft  = 13
 TriangleRight = 14
 
-NoSlip     = fe.Constant((0, 0))
-POut       = fe.Constant(0)
-InletFlow  = fe.Constant((U0, 0))
+NoSlip    = fe.Constant((0, 0))
+POut      = fe.Constant(0)
+InletFlow = fe.Constant((vi, 0))
 
 EntryBC         = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
 BottomWallBC    = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
@@ -122,7 +117,7 @@ TriangleRightBC = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, Triangl
 BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC, CircleBC, TriangleLeftBC, TriangleRightBC]
 
 ## Boundary check
-#import sys
+# import sys
 # fe.File('New.pvd') << domainBoundaries
 # sys.exit()
 
@@ -139,15 +134,15 @@ Parameters['newton_solver']['maximum_iterations']   = 4
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
 # Create files for storing solution
-VelFile = fe.File(OutFileV)
-PreFile = fe.File(OutFileP)
+FileVel  = fe.File('Results/Velocity.pvd')
+FilePres = fe.File('Results/Pressure.pvd')
 
 # Loops #####################################
 # Inner loop - Write data so many time steps
 # Outer loop - Time steps
 
-t   = dt
-tn  = 0
+t  = dt
+tn = 0
 
 while t < t_end:
 
@@ -161,9 +156,9 @@ while t < t_end:
     if tn%1 == 0:   # Save to file only if the time step increases by a step of 1 
         Velocity.rename('Velocity', 'Velocity')
         Pressure.rename('Pressure', 'Pressure')
-        VelFile << Velocity
-        PreFile << Pressure
-        print('Written Velocity And Pressure Data')
+        FileVel  << Velocity
+        FilePres << Pressure
+        print('Written velocity & pressure data')
     
     TFsol0.assign(TFsol)
     t   += dt
