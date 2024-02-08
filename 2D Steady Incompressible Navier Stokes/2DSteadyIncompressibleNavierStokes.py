@@ -70,9 +70,8 @@ Solver  = fe.NonlinearVariationalSolver(Problem)
 Parameters = Solver.parameters
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['relative_tolerance']   = 1e-7
-Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['maximum_iterations']   = 7
-Parameters['newton_solver']['relaxation_parameter'] = 1.0
+Parameters['newton_solver']['relaxation_parameter'] = 1
 
 FileVel  = fe.File('Results/Velocity.pvd')
 FilePres = fe.File('Results/Pressure.pvd')

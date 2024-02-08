@@ -129,7 +129,7 @@ R = (v-v0)/dt                \
 WeakForm += tau*fe.inner(fe.grad(w)*v0,R)*fe.dx(metadata={'quadrature_degree':8})
 
 # Petrov Galerkin Pressure Stabilzation (PSPG) stabilization for pressure field // The Ladyzhenskaya-Babuska-Brezzi condition not met
-WeakForm += -tau*fe.inner(fe.grad(s),R)*fe.dx(metadata={'quadrature_degree':8})
+# WeakForm += -tau*fe.inner(fe.grad(s),R)*fe.dx(metadata={'quadrature_degree':8})
 
 J = fe.derivative(WeakForm, TFsol, TF) # Jacobian
 
