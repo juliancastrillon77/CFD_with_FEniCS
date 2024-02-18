@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2d Steady Potential Flow
+# CFD - 2d Steady Potential Flow / Irrotational Flow
 
 import os
 import fenics as fe
@@ -18,7 +18,7 @@ Mesh = fe.Mesh('Mesh.xml')
 
 h = fe.CellDiameter(Mesh)
 
-vi  = 0.01
+vi  = 0.1
 mu  = fe.Constant(1)
 rho = fe.Constant(1)
 b   = fe.Constant((0, 0))
@@ -34,19 +34,22 @@ TF     = fe.TrialFunction(FS)
 TFsol  = fe.Function(FS)
 (v, p) = fe.split(TFsol)
 
-
-WeakForm = rho*fe.inner(w,fe.grad(v)*v)*fe.dx \
-           -fe.div(w)*p*fe.dx                 \
-           -rho*fe.dot(w,b)*fe.dx             \
-           +q*fe.div(v)*fe.dx
+WeakForm = fe.inner(w,fe.grad(v)*v)*fe.dx \
+           -fe.div(w)*p*fe.dx             \
+           -fe.dot(w,b)*fe.dx             \
+           -q*fe.div(v)*fe.dx
 
 vnorm = fe.sqrt(fe.dot(v,v))
 tau = ((2*vnorm/h)**2+9*(4/h**2)**2)**(-0.5)
 
-R = fe.grad(v)*v + fe.grad(p)
+#R = fe.grad(v)*v + fe.grad(p)
+#
+#R =   fe.grad(u)*u           \
+#    - mu*fe.div(fe.grad(u))  \
+#    + fe.grad(p)             \
+#    - b) 
 
 #WeakForm += tau*fe.inner(fe.grad(w)*v,R)*fe.dx(metadata={'quadrature_degree':8})
-
 
 J = fe.derivative(WeakForm, TFsol, TF)
 
@@ -84,8 +87,8 @@ Problem = fe.NonlinearVariationalProblem(WeakForm, TFsol, BCs, J)
 Solver  = fe.NonlinearVariationalSolver(Problem)
 
 Parameters = Solver.parameters
-Parameters['newton_solver']['absolute_tolerance'] = 1e-8
-Parameters['newton_solver']['relative_tolerance'] = 1e-7
+Parameters['newton_solver']['absolute_tolerance'] = 1e-4
+Parameters['newton_solver']['relative_tolerance'] = 1e-4
 Parameters['newton_solver']['maximum_iterations'] = 4
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
