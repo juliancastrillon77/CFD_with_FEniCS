@@ -8,30 +8,21 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-#################################################################################################
-## Parameters ###################################################################################
-MeshFile  = 'Mesh.xml'
-FacetFile = 'Mesh_facet_region.xml'
-OutFileT  = 'Results/Temperature.pvd'
+## Parameters ##
+Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
-Mesh = fe.Mesh(MeshFile)
-
-Te = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
-FS = fe.FunctionSpace(Mesh, Te)
+FS = fe.FunctionSpace(Mesh, 'Lagrange', 1)
 
 T = fe.TrialFunction(FS)
 w = fe.TestFunction(FS)
 
 TF = fe.Function(FS)
-#################################################################################################
-## Weak formulation #############################################################################
 
+## Weak formulation ##
 WeakForm = fe.dot(fe.grad(w), fe.grad(T))*fe.dx
 
-#################################################################################################
-## Boundary Conditions ##########################################################################
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, FacetFile)
-ds = fe.ds(subdomain_data = DomainBoundaries)
+## Boundary Conditions ##
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9
@@ -54,13 +45,7 @@ TriangleRightBC = fe.DirichletBC(FS, Temp1, DomainBoundaries, TriangleRight)
 
 BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC, CircleBC, TriangleLeftBC, TriangleRightBC]
 
-## Boundary check
-#import sys
-#fe.File('BoundaryCheck.pvd') << DomainBoundaries
-#sys.exit()
-
-#################################################################################################
-## Solver #######################################################################################
+## Solver ##
 a = fe.lhs(WeakForm)
 b = fe.rhs(WeakForm)
 
@@ -73,12 +58,10 @@ Solver.parameters['preconditioner'] = 'ilu'
 Solver.parameters['krylov_solver']['monitor_convergence'] = True
 Solver.parameters['krylov_solver']['relative_tolerance'] = fe.Constant(1e-6)
 Solver.parameters['krylov_solver']['absolute_tolerance'] = fe.Constant(1e-8)
+
 Solver.solve()
 
-TempFile = fe.File(OutFileT)
 TF.rename('Temperature','Temperature')
-TempFile << TF
+FileTemp = fe.File('Results/Temperature.pvd')
+FileTemp << TF
 
-#################################################################################################
-## END ##########################################################################################
-#################################################################################################

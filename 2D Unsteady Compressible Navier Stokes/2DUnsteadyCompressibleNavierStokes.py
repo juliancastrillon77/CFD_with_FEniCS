@@ -19,7 +19,7 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
 #################################################################################################
 ## Parameters ###################################################################################
-Mesh = fe.Mesh('Mesh.xml') # Create the mesh and import mesh into the solver
+Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml') # Create the mesh and import mesh into the solver
 
 dt    = 0.01 # Timestep             [s]
 t_end = 10   # Length of simulation [s]
@@ -135,7 +135,7 @@ J = fe.derivative(WeakForm, TFsol, TF) # Jacobian
 
 #################################################################################################
 ## Boundary Conditions ##########################################################################
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 # Identification of all correct boundary markers needed for the domain
 Entry         = 8
@@ -173,7 +173,7 @@ BCs = [EntryBC,  BottomWallBC,  ExitBC,  TopWallBC,  CircleBC,  TriangleLeftBC, 
 
 ## Boundary check
 # import sys
-# fe.File('New.pvd') << domainBoundaries
+# fe.File('New.pvd') << DomainBoundaries
 # sys.exit()
 
 ## Initial conditions

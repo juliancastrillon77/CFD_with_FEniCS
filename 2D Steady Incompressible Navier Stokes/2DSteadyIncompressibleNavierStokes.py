@@ -14,7 +14,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('Mesh.xml')
+Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
 vi  = 1                       # Inlet velocity [m/s]
 mu  = fe.Constant(1)          # Dynamic viscosity  [kg/ms]
@@ -40,7 +40,7 @@ WeakForm =   rho*fe.inner(w,fe.grad(v)*v)*fe.dx       \
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9
@@ -73,13 +73,13 @@ Parameters['newton_solver']['relative_tolerance']   = 1e-7
 Parameters['newton_solver']['maximum_iterations']   = 7
 Parameters['newton_solver']['relaxation_parameter'] = 1
 
-FileVel  = fe.File('Results/Velocity.pvd')
-FilePres = fe.File('Results/Pressure.pvd')
-
 Solver.solve()
 
 (Velocity, Pressure) = TFsol.split(deepcopy = True)
 Velocity.rename('Velocity','Velocity')
 Pressure.rename('Pressure','Pressure')
+
+FileVel  = fe.File('Results/Velocity.pvd')
+FilePres = fe.File('Results/Pressure.pvd')
 FileVel  << Velocity
 FilePres << Pressure

@@ -8,18 +8,16 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-MeshFile  = 'Mesh.xml'              # Input mesh
-FacetFile = 'Mesh_facet_region.xml' # Input mesh boundaries
-OutFileu  = 'Results/u.pvd'         # Output Storage
+Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
-Mesh = fe.Mesh(MeshFile)
 FS = fe.FunctionSpace(Mesh, 'Lagrange', 1)
 
 u = fe.TrialFunction(FS)
 w = fe.TestFunction(FS)
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, FacetFile)
-ds = fe.ds(subdomain_data = DomainBoundaries)
+TF = fe.Function(FS)
+
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9
@@ -46,8 +44,6 @@ a = fe.dot(fe.grad(w), fe.grad(u))*fe.dx
 f = fe.Expression('x[0]*x[1]', degree = 2)
 b = w*f*fe.dx
 
-TF = fe.Function(FS)
-
 Problem = fe.LinearVariationalProblem(a, -b, TF, BCs)
 Solver  = fe.LinearVariationalSolver(Problem)
 
@@ -56,11 +52,12 @@ Solver.parameters['preconditioner'] = 'ilu'
 Solver.parameters['krylov_solver']['monitor_convergence'] = True
 Solver.parameters['krylov_solver']['relative_tolerance'] = fe.Constant(1e-6)
 Solver.parameters['krylov_solver']['absolute_tolerance'] = fe.Constant(1e-8)
+
 Solver.solve()
 
-uFile = fe.File(OutFileu)
 TF.rename('u','u')
-uFile << TF
+FileU = fe.File('Results/u.pvd')
+FileU << TF
 
 
 
