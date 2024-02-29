@@ -17,8 +17,8 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
 vi  = 1                       # Inlet velocity [m/s]
-mu  = fe.Constant(1)          # Dynamic viscosity  [kg/ms]
-rho = fe.Constant(10)         # Density            [kg/m3]
+mu  = fe.Constant(0.001002)   # Dynamic viscosity  [kg/ms]
+rho = fe.Constant(1000)       # Density            [kg/m3]
 b   = fe.Constant((0, -9.81)) # Body accelerations [m/s2]
 
 Vel  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
@@ -70,8 +70,8 @@ Solver  = fe.NonlinearVariationalSolver(Problem)
 Parameters = Solver.parameters
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['relative_tolerance']   = 1e-7
-Parameters['newton_solver']['maximum_iterations']   = 7
-Parameters['newton_solver']['relaxation_parameter'] = 1
+Parameters['newton_solver']['maximum_iterations']   = 20
+Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
 Solver.solve()
 

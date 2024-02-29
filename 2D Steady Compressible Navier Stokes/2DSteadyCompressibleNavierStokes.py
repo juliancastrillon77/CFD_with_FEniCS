@@ -16,9 +16,9 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
 Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
-vi = 1 # Inlet velocity [m/s]
+vi = 10 # Inlet velocity [m/s]
 ## Air Properties at 25ºC 1atm
-mu = fe.Constant(0.1849)     # Dynamic viscosity                [kg/ms]
+mu = fe.Constant(0.00001825) # Dynamic viscosity                [kg/ms]
 k  = fe.Constant(0.02551)    # Thermal conductivity             [W/mK]
 cp = fe.Constant(1007)       # Heat capacity constant pressure  [J/kgK]
 cv = fe.Constant(718)        # Heat capacity constant volume    [J/kgK]
@@ -38,16 +38,14 @@ TF        = fe.TrialFunction(FS)
 TFsol     = fe.Function(FS)
 (v, p, T) = fe.split(TFsol)
 
-WeakForm =   fe.dot(w*p/(RR*T),fe.grad(v)*v)*fe.dx     \
+WeakForm =   (p/(RR*T))*fe.dot(w,fe.grad(v)*v)*fe.dx  \
            - fe.div(w)*p*fe.dx                        \
-           - fe.dot(w*p/(RR*T),b)*fe.dx                \
+           - fe.dot(w*p/(RR*T),b)*fe.dx               \
            + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
-               \
            + q*fe.div(v)*fe.dx \
-               \
-           - s*fe.dot(v,fe.grad(p))*fe.dx                            \
-           + (cp/(k))*(p/(RR*T))*fe.dot(s,fe.dot(v,fe.grad(T)))*fe.dx \
-           + fe.dot(fe.grad(s),fe.grad(T))*fe.dx
+           - fe.dot(s,fe.dot(v,fe.grad(p)))*fe.dx               \
+           + (p/(RR*T))*cp*fe.dot(s,fe.dot(v,fe.grad(T)))*fe.dx \
+           + k*fe.inner(fe.grad(s),fe.grad(T))*fe.dx
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
