@@ -27,7 +27,7 @@ Circle        = 12
 TriangleLeft  = 13
 TriangleRight = 14
 
-Expres = fe.Expression('x[1]*(1-x[1])', degree = 2)
+Expres = fe.Expression('x[1]*(1-x[1])', degree=2)
 Const  = fe.Constant(0)
 
 EntryBC         = fe.DirichletBC(FS, Const,  DomainBoundaries, Entry)

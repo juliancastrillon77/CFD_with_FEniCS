@@ -16,10 +16,10 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
 Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
-vi  = 1                       # Inlet velocity [m/s]
-mu  = fe.Constant(0.001002)   # Dynamic viscosity  [kg/ms]
-rho = fe.Constant(1000)       # Density            [kg/m3]
-b   = fe.Constant((0, -9.81)) # Body accelerations [m/s2]
+# Fluid Properties
+mu  = fe.Constant(1/50)   # Dynamic viscosity  [kg/ms]
+rho = fe.Constant(1)      # Density            [kg/m3]
+b   = fe.Constant((0, 0)) # Body accelerations [m/s2]
 
 Vel  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
 Pres = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
@@ -36,7 +36,14 @@ WeakForm =   rho*fe.inner(w,fe.grad(v)*v)*fe.dx       \
            - fe.div(w)*p*fe.dx                        \
            - rho*fe.dot(w,b)*fe.dx                    \
            + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
-           + q*fe.div(v)*fe.dx
+           - q*fe.div(v)*fe.dx
+
+#vnorm = fe.sqrt(fe.dot(v,v))
+#h = fe.CellDiameter(Mesh)
+#tau = ((2.0*vnorm/h)**2 + ((4.0*mu)/h**2)**2)**(-0.5)
+#R = fe.grad(v)*v+fe.grad(p)-mu*fe.div(fe.grad(v))-b
+#SUPG = tau*fe.inner(fe.grad(w)*v,R)*fe.dx(metadata={'quadrature_degree':4})
+#WeakForm += SUPG
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
@@ -52,7 +59,7 @@ TriangleRight = 14
 
 NoSlip    = fe.Constant((0, 0))
 POut      = fe.Constant(0)
-InletFlow = fe.Constant((vi, 0))
+InletFlow = fe.Expression(['-4*(x[1]-0.5)*(x[1]-0.5)+1','0'], degree=2)
 
 EntryBC         = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
 BottomWallBC    = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
@@ -64,13 +71,20 @@ TriangleRightBC = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, Triangl
 
 BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC, CircleBC, TriangleLeftBC, TriangleRightBC]
 
+InitialVel  = fe.interpolate(fe.Constant((fe.Constant(1), fe.Constant(1))), FS.sub(0).collapse()) 
+InitialPres = fe.interpolate(fe.Constant(10), FS.sub(1).collapse())
+
+fe.assign(TFsol.sub(0),  InitialVel)
+fe.assign(TFsol.sub(1),  InitialPres)
+
 Problem = fe.NonlinearVariationalProblem(WeakForm, TFsol, BCs, J)
 Solver  = fe.NonlinearVariationalSolver(Problem)
 
 Parameters = Solver.parameters
+Parameters['newton_solver']['linear_solver'] = 'mumps'
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['relative_tolerance']   = 1e-7
-Parameters['newton_solver']['maximum_iterations']   = 20
+Parameters['newton_solver']['maximum_iterations']   = 7
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
 Solver.solve()
