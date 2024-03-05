@@ -2,7 +2,7 @@
 
  --- Results Gallery: https://drive.google.com/drive/folders/1iqLgXiIi73UaankAaU2uCSRX-CPFJ8cV?usp=sharing ---
 
- ![Screen Shot 2024-03-04 at 9 55 16 PM](https://github.com/juliancastrillon77/CFD_with_FEniCS/assets/146413729/78773ec7-806c-49d9-b307-4a64fdc89a9e)
+ ![Screen Shot 2024-03-04 at 9 56 50 PM](https://github.com/juliancastrillon77/CFD_with_FEniCS/assets/146413729/90bee105-f104-4750-a008-a34c76cd3723)
 
  Hello ! Welcome to my CFD repository.
  
