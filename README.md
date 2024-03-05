@@ -1,7 +1,9 @@
 # CFD_with_FEniCS
 
  --- Results Gallery: https://drive.google.com/drive/folders/1iqLgXiIi73UaankAaU2uCSRX-CPFJ8cV?usp=sharing ---
- 
+
+ ![Screen Shot 2024-03-04 at 9 54 01 PM](https://github.com/juliancastrillon77/CFD_with_FEniCS/assets/146413729/e8278125-c84a-453b-a56c-c44084d1a6e8)
+
  Hello ! Welcome to my CFD repository.
  
 The objective of this repository is to embark on a computational odyssey where we harness the simplicity of Fenics to navigate the complexities of computational fluid dynamics (CFD).
