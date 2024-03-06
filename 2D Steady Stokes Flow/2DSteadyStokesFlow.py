@@ -16,12 +16,10 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
 Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
 
-h = fe.CellDiameter(Mesh)
-
-vi  = 1
-mu  = fe.Constant(1000)
-rho = fe.Constant(1)
-b   = fe.Constant((0, 0))
+# Fluid Properties
+mu  = fe.Constant(1)      # Dynamic viscosity  [kg/ms]
+rho = fe.Constant(1)      # Density            [kg/m3]
+b   = fe.Constant((0, 0)) # Body accelerations [m/s2]
 
 Vel  = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
 Pres = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
@@ -33,9 +31,17 @@ FS   = fe.FunctionSpace(Mesh, M)
 
 TF  = fe.Function(FS)
 
-WeakForm = mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
-           - p*fe.div(w)*fe.dx                      \
+WeakForm =   mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
+           - fe.div(w)*p*fe.dx                        \
+           - rho*fe.dot(w,b)*fe.dx                    \
            - q*fe.div(v)*fe.dx
+
+### Petrov Galerkin Pressure Stabilzation (PSPG) stabilization for pressure field // The Ladyzhenskaya-Babuska-Brezzi condition not met
+#h    = fe.CellDiameter(Mesh)
+#tau  = (1/3)*(h*h)/(4.0*mu)
+#R    = fe.grad(p)
+#PSPG = -tau*fe.inner(fe.grad(q),R)*fe.dx(metadata={'quadrature_degree':4})
+#WeakForm += PSPG
 
 DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
 
@@ -49,7 +55,7 @@ TriangleRight = 14
 
 NoSlip    = fe.Constant((0,0))
 POut      = fe.Constant(0)
-InletFlow = fe.Constant((vi,0))
+InletFlow = fe.Expression(['6*x[1]*(1-x[1])','0'], degree=2)
 
 EntryBC         = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
 BottomWallBC    = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
@@ -61,19 +67,19 @@ TriangleRightBC = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, Triangl
 
 BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC, CircleBC, TriangleLeftBC, TriangleRightBC]
 
-InitialVel  = fe.interpolate(fe.Constant((fe.Constant(vi), fe.Constant(0))), FS.sub(0).collapse()) 
-InitialPres = fe.interpolate(fe.Constant(1e-3), FS.sub(1).collapse())
+InitialVel  = fe.interpolate(fe.Constant((fe.Constant(1), fe.Constant(0))), FS.sub(0).collapse()) 
+InitialPres = fe.interpolate(fe.Constant(10), FS.sub(1).collapse())
 
 fe.assign(TF.sub(0), InitialVel)
 fe.assign(TF.sub(1), InitialPres)
 
-a = fe.lhs(WeakForm) # Bilinear form
-b = fe.rhs(WeakForm) # Linear form
+a = fe.lhs(WeakForm)
+b = fe.rhs(WeakForm)
 
 Problem = fe.LinearVariationalProblem(a, b, TF, BCs)
 Solver  = fe.LinearVariationalSolver(Problem)
 
-Solver.parameters['linear_solver']  = 'cg'
+Solver.parameters['linear_solver']  = 'petsc'
 Solver.parameters['preconditioner'] = 'ilu'
 Solver.parameters['krylov_solver']['monitor_convergence'] = True
 Solver.parameters['krylov_solver']['relative_tolerance'] = fe.Constant(1e-6)
