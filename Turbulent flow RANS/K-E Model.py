@@ -101,8 +101,6 @@ TriangleRight = 14
 NoSlip    = fe.Constant((0, 0))
 POut      = fe.Constant(0)
 InletFlow = fe.Constant((1, 0))
-#InletFlow = fe.Expression(['6*x[1]*(1-x[1])','0'], degree=2)
-
 KIn       = fe.Constant(0.9)
 EIn       = fe.Constant(0.0017)      
 
