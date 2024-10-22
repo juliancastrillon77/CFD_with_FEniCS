@@ -78,8 +78,9 @@ StrTnsr = fe.Constant(0.5)*(fe.grad(v)+fe.grad(v).T)
 
 RANSeqn =   rho*fe.inner(w,fe.grad(v)*v)*dx               \
            - fe.div(w)*p*dx                               \
-           + (mu+nutr)*fe.inner(fe.grad(w),fe.grad(v))*dx \
-           - rho*fe.dot(w,b)*dx
+           - rho*fe.dot(w,b)*dx                           \
+           + (mu+nutr)*fe.inner(fe.grad(w),fe.grad(v))*dx
+
 
 Contieqn =  q*fe.div(v)*dx
 
@@ -122,7 +123,8 @@ BottomWallBCnuhat = fe.DirichletBC(FS.sub(2), POut,            DomainBoundaries,
 ExitBCnuhat       = fe.DirichletBC(FS.sub(2), nuhatOut,        DomainBoundaries, Exit)
 NozzleBCnuhat     = fe.DirichletBC(FS.sub(2), nuhatOut,        DomainBoundaries, Nozzle)
 
-BCs = [EntryTopBC, NozzleBC, EntryBottomBC, ExitBC, ExitBCnuhat, NozzleBCnuhat, TopWallBC, BottomWallBC, TopWallBCnuhat, BottomWallBCnuhat]
+BCs = [EntryTopBC, NozzleBC, EntryBottomBC, ExitBC, ExitBCnuhat, NozzleBCnuhat]
+#TopWallBC, BottomWallBC, TopWallBCnuhat, BottomWallBCnuhat]
 
 InitialVel   = fe.interpolate(fe.Constant((fe.Constant(0.1), fe.Constant(0.1))), FS.sub(0).collapse()) 
 InitialPres  = fe.interpolate(fe.Constant(0.1), FS.sub(1).collapse())
