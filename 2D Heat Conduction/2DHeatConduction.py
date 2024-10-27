@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Heat Conduction
+# 2D Heat Conduction
 
 import os
 import fenics as fe
@@ -8,7 +8,7 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DMesh.xml')
 
 Temp1 = fe.Constant(25)
 Temp2 = fe.Constant(7)
@@ -22,7 +22,7 @@ TF = fe.Function(FS)
 
 WeakForm = fe.dot(fe.grad(w), fe.grad(T))*fe.dx
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9

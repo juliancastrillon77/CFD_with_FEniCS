@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 3D Steady Incompressible Navier Stokes Equations
+# 3D Steady Incompressible Navier Stokes Equations
 
 import os
 import fenics as fe
@@ -14,7 +14,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('../Mesh/3D Mesh/3DMesh.xml')
+Mesh = fe.Mesh('Mesh/3D Mesh/3DMesh.xml')
 
 vi  = 0.2                        # Inlet velocity [m/s]
 mu  = fe.Constant(1)             # Dynamic viscosity  [kg/ms]
@@ -30,17 +30,17 @@ TF     = fe.TrialFunction(FS)
 (w, q) = fe.TestFunctions(FS)
 
 TFsol  = fe.Function(FS)
-(v, p) = fe.split(TFsol)
+(u, p) = fe.split(TFsol)
 
-WeakForm =   rho*fe.inner(w,fe.grad(v)*v)*fe.dx       \
+WeakForm =   rho*fe.inner(w,fe.grad(u)*u)*fe.dx       \
            - fe.div(w)*p*fe.dx                        \
            - rho*fe.dot(w,b)*fe.dx                    \
-           + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
-           + q*fe.div(v)*fe.dx
+           + mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx \
+           + q*fe.div(u)*fe.dx
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/3D Mesh/3DMesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/3D Mesh/3DMesh_facet_region.xml')
 
 LeftWall            = 46
 RightWall           = 47

@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Steady Poisson Equation
+# 2D Steady Poisson Equation
 
 import os
 import fenics as fe
@@ -8,7 +8,7 @@ def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DMesh.xml')
 
 FS = fe.FunctionSpace(Mesh, 'Lagrange', 1)
 
@@ -17,7 +17,7 @@ w = fe.TestFunction(FS)
 
 TF = fe.Function(FS)
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9

@@ -1,14 +1,14 @@
 # Julian Castrillon
-# CFD - Turbulent Spalart Allmaras
+# Turbulence Spalart Allmaras
 
 import os
+import numpy as np
 import fenics as fe
 
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 clear_console()
 
-#fe.set_log_level(fe.LogLevel.PROGRESS)
 fe.parameters['form_compiler']['representation']     = 'uflacs'
 fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
@@ -17,9 +17,9 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 Mesh = fe.Mesh('Mesh/2D Mesh/2DMeshJet.xml')
 
 # Fluid Properties
-mu  = fe.Constant(1.0/1.0)    # Dynamic viscosity  [kg/ms]
-rho = fe.Constant(1.0)        # Density            [kg/m3]
-b   = fe.Constant((0.0, 0.0)) # Body accelerations [m/s2]
+mu  = fe.Constant(1.0/1.0)      # Dynamic viscosity  [kg/ms]
+rho = fe.Constant(1.0)          # Density            [kg/m3]
+b   = fe.Constant((0.0, 0.0))   # Body accelerations [m/s2]
 
 Vel   = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
 Pres  = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
@@ -32,7 +32,7 @@ TF   = fe.TrialFunction(FS)
 (w, q, y) = fe.TestFunctions(FS)
 
 TFsol  = fe.Function(FS)
-(v, p, nuhat) = fe.split(TFsol)
+(u, p, nuhat) = fe.split(TFsol)
 
 # Model constants 
 cb1   = fe.Constant(0.1355)
@@ -46,51 +46,44 @@ sigma = fe.Constant(2/3)
 k     = fe.Constant(0.41)
 cw1   = (cb1/(k**2))+((1.0+cb2)/(sigma))
 
-#class distance_to_wall(fe.UserExpression):
-
-#    def eval(self, value, x):
-#        if x[1] > 1/2:
-#            value[0] = 1 - x[1]
-#        else:
-#            value[0] = x[1]
-#        return(value)
-#d = distance_to_wall()
-#W = FS.sub(2)
-#d = fe.interpolate(d, W.collapse())
-
 # Model equations
 d       = fe.Constant(10)
 X       = nuhat/mu
 fv1     = (X**3)/((X**3)+(cv1**3))
 nutr    = fv1*nuhat
 fv2     = 1-(X/(1+(X*fv1)))
-RotTnsr = 0.5*(fe.grad(v)-fe.grad(v).T)
+RotTnsr = 0.5*(fe.grad(u)-fe.grad(u).T)
 Omega   = fe.sqrt(2*fe.inner(RotTnsr,RotTnsr))
-S       = Omega+fv2*nuhat/((k**2)*(d**2))
-S       = fe.conditional(fe.le(S,0), 0.3*Omega, S)
-r       = fe.conditional(fe.le(nuhat/(S*(k**2)*(d**2)),10),nuhat/(S*(k**2)*(d**2)), 10)
+Shat    = Omega+fv2*nuhat/((k**2)*(d**2))
+Shat    = fe.conditional(fe.le(Shat,0.3*Omega), 0.3*Omega, Shat)
+r       = nuhat/(Shat*(k**2)*(d**2))
+#r       = fe.conditional(fe.le(Shat,0),10,nuhat/(Shat*(k**2)*(d**2)))
 ft2     = ct3*fe.exp(-ct4*(X**2))
 g       = r+cw2*((r**6)-r)
 fw      = g*((1+(cw3**6))/((g**6)+(cw3**6)))**(1.0/6.0)
 
+S = 0.5*(fe.grad(u)+fe.grad(u).T)      # Strain rate tensor
+I = fe.Identity(Mesh.topology().dim()) # Identity tensor
+Cst = -(p)*I + 2*(mu)*S                # Cauchy stress tensor
+
 dx = fe.dx(metadata={"quadrature_degree":4})
-StrTnsr = fe.Constant(0.5)*(fe.grad(v)+fe.grad(v).T)
 
-RANSeqn =   rho*fe.inner(w,fe.grad(v)*v)*dx               \
-           - fe.div(w)*p*dx                               \
-           - rho*fe.dot(w,b)*dx                           \
-           + (mu+nutr)*fe.inner(fe.grad(w),fe.grad(v))*dx
+RANS = fe.inner(w,fe.grad(rho*u)*u)*dx    \
+     - fe.dot(w,(rho*b))*dx               \
+     + fe.inner(fe.grad(w),Cst)*dx        \
+     + 2*fe.inner(fe.grad(w),(nutr*S))*dx
 
+Conti = q*fe.div(rho*u)*dx
 
-Contieqn =  q*fe.div(v)*dx
+MVisc = y*fe.dot(u,fe.grad(nuhat))*dx                                 \
+      - y*(cb1*(1-ft2)*Shat*nuhat)*dx                                 \
+      + y*(((cw1*fw)-(cb1/(k**2)))*(nuhat/d)**2)*dx                   \
+      + (1/sigma)*fe.dot(fe.grad(y),(nuhat+mu/rho)*fe.grad(nuhat))*dx \
+      - y*(cb2/sigma)*fe.dot(fe.grad(nuhat),fe.grad(nuhat))*dx
 
-MVisceqn =    y*fe.dot(v,fe.grad(nuhat))*dx                             \
-            - y*(cb1*(1-ft2)*S*nuhat)*dx                                \
-            + y*(((cw1*fw)-(cb1/(k**2)))*(nuhat/d)**2)*dx               \
-            + (1/sigma)*fe.dot(fe.grad(y),(nuhat+mu)*fe.grad(nuhat))*dx \
-            - y*(cb2/sigma)*fe.dot(fe.grad(nuhat),fe.grad(nuhat))*dx
+#WeakForm = RANS + Conti + MVisc
+WeakForm = RANS + Conti + MVisc
 
-WeakForm = RANSeqn + Contieqn + MVisceqn
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
@@ -124,11 +117,10 @@ ExitBCnuhat       = fe.DirichletBC(FS.sub(2), nuhatOut,        DomainBoundaries,
 NozzleBCnuhat     = fe.DirichletBC(FS.sub(2), nuhatOut,        DomainBoundaries, Nozzle)
 
 BCs = [EntryTopBC, NozzleBC, EntryBottomBC, ExitBC, ExitBCnuhat, NozzleBCnuhat]
-#TopWallBC, BottomWallBC, TopWallBCnuhat, BottomWallBCnuhat]
 
-InitialVel   = fe.interpolate(fe.Constant((fe.Constant(0.1), fe.Constant(0.1))), FS.sub(0).collapse()) 
-InitialPres  = fe.interpolate(fe.Constant(0.1), FS.sub(1).collapse())
-Initialnuhat = fe.interpolate(fe.Constant(0.1), FS.sub(2).collapse())
+InitialVel   = fe.interpolate(fe.Constant((fe.Constant(0.01), fe.Constant(0.01))), FS.sub(0).collapse()) 
+InitialPres  = fe.interpolate(fe.Constant(0.01), FS.sub(1).collapse())
+Initialnuhat = fe.interpolate(fe.Constant(0.01), FS.sub(2).collapse())
 
 fe.assign(TFsol.sub(0),  InitialVel)
 fe.assign(TFsol.sub(1),  InitialPres)

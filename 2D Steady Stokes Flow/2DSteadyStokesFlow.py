@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Steady Stokes Flow
+# 2D Steady Stokes Flow
 
 import os
 import fenics as fe
@@ -14,7 +14,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DMesh.xml')
 
 # Fluid Properties
 mu  = fe.Constant(1)      # Dynamic viscosity  [kg/ms]
@@ -26,15 +26,15 @@ Pres = fe.FiniteElement('Lagrange', Mesh.ufl_cell(), 1)
 M    = fe.MixedElement([Vel, Pres])
 FS   = fe.FunctionSpace(Mesh, M)
 
-(v, p) = fe.TrialFunctions(FS)
+(u, p) = fe.TrialFunctions(FS)
 (w, q) = fe.TestFunctions(FS)
 
 TF  = fe.Function(FS)
 
-WeakForm =   mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
+WeakForm =   mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx \
            - fe.div(w)*p*fe.dx                        \
            - rho*fe.dot(w,b)*fe.dx                    \
-           - q*fe.div(v)*fe.dx
+           - q*fe.div(u)*fe.dx
 
 ### Petrov Galerkin Pressure Stabilzation (PSPG) stabilization for pressure field // The Ladyzhenskaya-Babuska-Brezzi condition not met
 #h    = fe.CellDiameter(Mesh)
@@ -43,7 +43,7 @@ WeakForm =   mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
 #PSPG = -tau*fe.inner(fe.grad(q),R)*fe.dx(metadata={'quadrature_degree':4})
 #WeakForm += PSPG
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9

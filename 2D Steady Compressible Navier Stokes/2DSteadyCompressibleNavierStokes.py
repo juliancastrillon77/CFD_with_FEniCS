@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Steady Compressible Navier Stokes Equations
+# 2D Steady Compressible Navier Stokes equations
 
 import os
 import fenics as fe
@@ -14,7 +14,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DMesh.xml')
 
 vi = 10 # Inlet velocity [m/s]
 ## Air Properties at 25ºC 1atm
@@ -36,20 +36,23 @@ TF        = fe.TrialFunction(FS)
 (w, q, s) = fe.TestFunctions(FS)
 
 TFsol     = fe.Function(FS)
-(v, p, T) = fe.split(TFsol)
+(u, p, T) = fe.split(TFsol)
 
-WeakForm =   (p/(RR*T))*fe.dot(w,fe.grad(v)*v)*fe.dx  \
-           - fe.div(w)*p*fe.dx                        \
-           - fe.dot(w*p/(RR*T),b)*fe.dx               \
-           + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
-           + q*fe.div(v)*fe.dx \
-           - fe.dot(s,fe.dot(v,fe.grad(p)))*fe.dx               \
-           + (p/(RR*T))*cp*fe.dot(s,fe.dot(v,fe.grad(T)))*fe.dx \
-           + k*fe.inner(fe.grad(s),fe.grad(T))*fe.dx
+CNSeqn =   (p/(RR*T))*fe.dot(w,fe.grad(u)*u)*fe.dx            \
+         - fe.div(w)*p*fe.dx                                  \
+         - fe.dot(w*p/(RR*T),b)*fe.dx                         \
+         + mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx           \
+         - fe.dot(s,fe.dot(u,fe.grad(p)))*fe.dx               \
+         + (p/(RR*T))*cp*fe.dot(s,fe.dot(u,fe.grad(T)))*fe.dx \
+         + k*fe.inner(fe.grad(s),fe.grad(T))*fe.dx
+
+Contieqn = q*fe.div(u)*fe.dx
+
+WeakForm = CNSeqn + Contieqn
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9

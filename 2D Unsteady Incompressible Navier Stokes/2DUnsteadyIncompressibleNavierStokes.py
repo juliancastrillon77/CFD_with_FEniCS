@@ -1,5 +1,5 @@
 # Julian Castrillon
-# CFD - 2D Unsteady Incompressible Navier Stokes Equations
+# 2D Unsteady Incompressible Navier Stokes Equations
 
 import os
 import numpy as np
@@ -15,7 +15,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('../Mesh/2D Mesh/2DMesh.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DMesh.xml')
 
 dt    = 0.01
 t_end = 11
@@ -38,31 +38,31 @@ TF     = fe.TrialFunction(FS)
 (w, q) = fe.TestFunctions(FS)
 
 TFsol  = fe.Function(FS)
-(v, p) = fe.split(TFsol)
+(u, p) = fe.split(TFsol)
 
-WeakFormB =   rho*fe.inner(w,fe.grad(v)*v)*fe.dx       \
+WeakFormB =   rho*fe.inner(w,fe.grad(u)*u)*fe.dx       \
             - fe.div(w)*p*fe.dx                        \
             - rho*fe.dot(w,b)*fe.dx                    \
-            + mu*fe.inner(fe.grad(w),fe.grad(v))*fe.dx \
-            - q*fe.div(v)*fe.dx                        \
+            + mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx \
+            - q*fe.div(u)*fe.dx                        \
 
 TFsol0   = fe.Function(FS)
-(v0, p0) = fe.split(TFsol0)
+(u0, p0) = fe.split(TFsol0)
 
-WeakFormF =   rho*fe.inner(w,fe.grad(v0)*v0)*fe.dx      \
+WeakFormF =   rho*fe.inner(w,fe.grad(u0)*u0)*fe.dx      \
             - fe.div(w)*p*fe.dx                         \
             - rho*fe.dot(w,b)*fe.dx                     \
-            + mu*fe.inner(fe.grad(w),fe.grad(v0))*fe.dx \
-            - q*fe.div(v0)*fe.dx                        \
+            + mu*fe.inner(fe.grad(w),fe.grad(u0))*fe.dx \
+            - q*fe.div(u0)*fe.dx                        \
                            
-WeakForm = fe.inner((v-v0)/dt,w)*fe.dx + (theta)*WeakFormB + (1-theta)*WeakFormF
+WeakForm = fe.inner((u-u0)/dt,w)*fe.dx + (theta)*WeakFormB + (1-theta)*WeakFormF
 
 ### Streamwise Upwind Petrov Galerkin (SUPG) stabilization for convection #######################
-#vnorm = fe.sqrt(fe.dot(v0,v0))
+#vnorm = fe.sqrt(fe.dot(u0,u0))
 #tau   = ((1/(theta*dt))**2+(2*vnorm/h)**2+9*(4*mu/h**2)**2)**(-0.5)
-#R =  idt*(v-v0)+theta*(fe.grad(v)*v+fe.grad(p)-mu*fe.div(fe.grad(v))-b) \
-#    +(1-theta)*(fe.grad(v0)*v0+fe.grad(p)-mu*fe.div(fe.grad(v0))-b)
-#SUPG = tau*fe.inner(fe.grad(w)*v0,R)*fe.dx(metadata={'quadrature_degree':4})
+#R =  idt*(u-u0)+theta*(fe.grad(u)*u+fe.grad(p)-mu*fe.div(fe.grad(u))-b) \
+#    +(1-theta)*(fe.grad(u0)*u0+fe.grad(p)-mu*fe.div(fe.grad(u0))-b)
+#SUPG = tau*fe.inner(fe.grad(w)*u0,R)*fe.dx(metadata={'quadrature_degree':4})
 #WeakForm += SUPG
 
 ### Petrov Galerkin Pressure Stabilzation (PSPG) stabilization for pressure field // The Ladyzhenskaya-Babuska-Brezzi condition not met
@@ -71,7 +71,7 @@ WeakForm = fe.inner((v-v0)/dt,w)*fe.dx + (theta)*WeakFormB + (1-theta)*WeakFormF
 
 J = fe.derivative(WeakForm, TFsol, TF)
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, '../Mesh/2D Mesh/2DMesh_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DMesh_facet_region.xml')
 
 Entry         = 8
 BottomWall    = 9
@@ -101,7 +101,6 @@ Solver  = fe.NonlinearVariationalSolver(Problem)
 Parameters = Solver.parameters
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['relative_tolerance']   = 1e-7
-Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['maximum_iterations']   = 4
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
 
