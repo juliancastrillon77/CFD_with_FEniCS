@@ -1,5 +1,5 @@
 # Julian Castrillon
-# 2D Steady Poisson Equation
+# 2D Steady Poisson
 
 import os
 import fenics as fe
