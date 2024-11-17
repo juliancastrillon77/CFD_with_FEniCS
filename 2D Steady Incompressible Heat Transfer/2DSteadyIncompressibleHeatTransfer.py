@@ -106,7 +106,7 @@ Parameters['newton_solver']['linear_solver'] = 'petsc'
 Parameters['newton_solver']['absolute_tolerance']   = 1e-7
 Parameters['newton_solver']['relative_tolerance']   = 1e-6
 Parameters['newton_solver']['maximum_iterations']   = 5
-Parameters['newton_solver']['relaxation_parameter'] = 1.0
+Parameters['newton_solver']['relaxation_parameter'] = 0.9
 Parameters['newton_solver']['error_on_nonconvergence'] = False
 
 Solver.solve()
@@ -115,7 +115,7 @@ FS2 = fe.FunctionSpace(Mesh, 'Lagrange', 1)
 L   = fe.Constant(1.0)
 vel = fe.sqrt(fe.dot(u,u))
 Re  = (rho*vel*L)/mu
-Reynolds = fe.project(rho, FS2)
+Reynolds = fe.project(Re, FS2)
 
 (Velocity, Pressure, Temperature) = TFsol.split(deepcopy = True)
 Velocity.rename('Velocity','Velocity')
