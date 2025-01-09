@@ -81,9 +81,7 @@ MVisc = y*fe.dot(u,fe.grad(nuhat))*dx                                 \
       + (1/sigma)*fe.dot(fe.grad(y),(nuhat+mu/rho)*fe.grad(nuhat))*dx \
       - y*(cb2/sigma)*fe.dot(fe.grad(nuhat),fe.grad(nuhat))*dx
 
-#WeakForm = RANS + Conti + MVisc
 WeakForm = RMnt + Cnt + MVisc
-
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
@@ -122,9 +120,9 @@ InitialVel   = fe.interpolate(fe.Constant((fe.Constant(0.01), fe.Constant(0.01))
 InitialPres  = fe.interpolate(fe.Constant(0.01), FS.sub(1).collapse())
 Initialnuhat = fe.interpolate(fe.Constant(0.01), FS.sub(2).collapse())
 
-fe.assign(TFsol.sub(0),  InitialVel)
-fe.assign(TFsol.sub(1),  InitialPres)
-fe.assign(TFsol.sub(2),  Initialnuhat)
+fe.assign(TFsol.sub(0), InitialVel)
+fe.assign(TFsol.sub(1), InitialPres)
+fe.assign(TFsol.sub(2), Initialnuhat)
 
 Problem = fe.NonlinearVariationalProblem(WeakForm, TFsol, BCs, J)
 Solver  = fe.NonlinearVariationalSolver(Problem)
@@ -144,9 +142,6 @@ Velocity.rename('Velocity','Velocity')
 Pressure.rename('Pressure','Pressure')
 ViscosityHat.rename('KineticEnergy','KineticEnergy')
 
-FileVel   = fe.File('ResultsSA/Velocity.pvd')
-FilePres  = fe.File('ResultsSA/Pressure.pvd')
-FileVisHt = fe.File('ResultsSA/ViscosityHat.pvd')
-FileVel   << Velocity
-FilePres  << Pressure
-FileVisHt << ViscosityHat
+fe.File('ResultsSA/Velocity.pvd') << Velocity
+fe.File('ResultsSA/Pressure.pvd') << Pressure
+fe.File('ResultsSA/ViscosityHat.pvd') << ViscosityHat

@@ -2,6 +2,7 @@
 # 2D Steady Incompressible
 
 import os
+import numpy as np
 import fenics as fe
 
 def clear_console():
@@ -13,7 +14,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('Mesh/2D Mesh/2DChannelSemiCircle.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DChannelSemiCircle2.xml')
 
 mu  = fe.Constant(0.001)  # Dynamic viscosity  [kg/ms]
 rho = fe.Constant(1)      # Density            [kg/m3]
@@ -46,21 +47,21 @@ WeakForm = Mnt + Cnt
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DChannelSemiCircle_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DChannelSemiCircle2_facet_region.xml')
 
-Entry         = 1
-BottomWall    = 2
-Exit          = 3
-TopWall       = 4
+Entry      = 1
+BottomWall = 2
+Exit       = 3
+TopWall    = 4
 
 NoSlip    = fe.Constant((0, 0))
 POut      = fe.Constant(0)
 InletFlow = fe.Expression(['2*((4*x[1]*(0.1-x[1]))/(0.1*0.1))','0'], degree=2)
 
-EntryBC         = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
-BottomWallBC    = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
-ExitBC          = fe.DirichletBC(FS.sub(1), POut,      DomainBoundaries, Exit)
-TopWallBC       = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, TopWall)
+EntryBC      = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
+BottomWallBC = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
+ExitBC       = fe.DirichletBC(FS.sub(1), POut,      DomainBoundaries, Exit)
+TopWallBC    = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, TopWall)
 
 BCs = [EntryBC, BottomWallBC, ExitBC, TopWallBC]
 
@@ -76,33 +77,51 @@ Solver  = fe.NonlinearVariationalSolver(Problem)
 Parameters = Solver.parameters
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['relative_tolerance']   = 1e-7
-Parameters['newton_solver']['maximum_iterations']   = 20
+Parameters['newton_solver']['maximum_iterations']   = 1
 Parameters['newton_solver']['relaxation_parameter'] = 1.0
+Parameters['newton_solver']['error_on_nonconvergence'] = False
 
-Solver.solve()
+Total_iterations = 5
+for i in range(Total_iterations):
+      print(f"Iteration {i+1}: Gatos")
+      Solver.solve()
+      if i == Total_iterations - 1:
+            print("Reached maximum limit of iterations")
+            break
 
 FS2 = fe.FunctionSpace(Mesh, 'Lagrange', 1)
-L   = fe.Constant(0.1)
-uMag = fe.sqrt(fe.dot(u,u))
-Re  = (rho*uMag*L)/mu
+
+L        = fe.Constant(0.1)
+uMag     = fe.sqrt(fe.dot(u,u))
+Re       = (rho*uMag*L)/mu
 Reynolds = fe.project(Re, FS2)
 
-SSFS = fe.TensorFunctionSpace(Mesh, 'P', 1)
-ShearStressV = (2*mu*S) 
-ShearStress  = fe.project(ShearStressV, SSFS)
+ShearTnsr    = (2*mu*S) 
+ShearStressV = fe.sqrt(fe.inner(ShearTnsr,ShearTnsr))
+ShearStress  = fe.project(ShearStressV, FS2)
+
+h      = fe.CellDiameter(Mesh)
+Pe     = uMag*h/(2*mu)
+Peclet = fe.project(Pe, FS2)
 
 (Velocity, Pressure) = TFsol.split(deepcopy = True)
 Velocity.rename('Velocity','Velocity')
 Pressure.rename('Pressure','Pressure')
 Reynolds.rename('Reynolds','Reynolds')
 ShearStress.rename('ShearStress','ShearStress')
+Peclet.rename('Peclet','Peclet')
 DomainBoundaries.rename('DomainBoundaries','DomainBoundaries')
 
-fe.File('Results/Velocity.xml')    << Velocity
-fe.File('Results/Pressure.xml')    << Pressure
-fe.File('Results/Reynolds.pvd')    << Reynolds
-fe.File('Results/ShearStress.xml') << ShearStress
-fe.File('Results/Boundaries.pvd')  << DomainBoundaries
+fe.File('Results1/Peclet.pvd')      << Peclet
+fe.File('Results1/Velocity.xml')    << Velocity
+fe.File('Results1/Pressure.xml')    << Pressure
+fe.File('Results1/Reynolds.xml')    << Reynolds
+fe.File('Results1/ShearStress.xml') << ShearStress
+fe.File('Results1/Velocity.pvd')    << Velocity
+fe.File('Results1/Pressure.pvd')    << Pressure
+fe.File('Results1/Reynolds.pvd')    << Reynolds
+fe.File('Results1/ShearStress.pvd') << ShearStress
+fe.File('Results1/Boundaries.pvd')  << DomainBoundaries
 
 
 

@@ -50,8 +50,8 @@ Solver  = fe.LinearVariationalSolver(Problem)
 Solver.parameters['linear_solver']  = 'cg'
 Solver.parameters['preconditioner'] = 'ilu'
 Solver.parameters['krylov_solver']['monitor_convergence'] = True
-Solver.parameters['krylov_solver']['relative_tolerance'] = fe.Constant(1e-6)
-Solver.parameters['krylov_solver']['absolute_tolerance'] = fe.Constant(1e-8)
+Solver.parameters['krylov_solver']['relative_tolerance']  = fe.Constant(1e-6)
+Solver.parameters['krylov_solver']['absolute_tolerance']  = fe.Constant(1e-8)
 
 Solver.solve()
 
