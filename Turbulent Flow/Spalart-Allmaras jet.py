@@ -140,7 +140,7 @@ Solver.solve()
 (Velocity, Pressure, ViscosityHat) = TFsol.split(deepcopy = True)
 Velocity.rename('Velocity','Velocity')
 Pressure.rename('Pressure','Pressure')
-ViscosityHat.rename('KineticEnergy','KineticEnergy')
+ViscosityHat.rename('ViscosityHat','ViscosityHat')
 
 fe.File('ResultsSA/Velocity.pvd') << Velocity
 fe.File('ResultsSA/Pressure.pvd') << Pressure

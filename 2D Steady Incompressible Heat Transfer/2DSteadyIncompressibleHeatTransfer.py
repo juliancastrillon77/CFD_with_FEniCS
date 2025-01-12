@@ -105,7 +105,7 @@ Parameters = Solver.parameters
 Parameters['newton_solver']['linear_solver'] = 'petsc'
 Parameters['newton_solver']['absolute_tolerance']   = 1e-7
 Parameters['newton_solver']['relative_tolerance']   = 1e-6
-Parameters['newton_solver']['maximum_iterations']   = 5
+Parameters['newton_solver']['maximum_iterations']   = 15
 Parameters['newton_solver']['relaxation_parameter'] = 0.9
 Parameters['newton_solver']['error_on_nonconvergence'] = False
 
@@ -126,7 +126,7 @@ Reynolds.rename('Reynolds','Reynolds')
 FileVel  = fe.File('Results/Velocity.pvd')
 FilePres = fe.File('Results/Pressure.pvd')
 FileTemp = fe.File('Results/Temperature.pvd')
-FileRey = fe.File('Results/Reynolds.pvd')
+FileRey  = fe.File('Results/Reynolds.pvd')
 FileVel  << Velocity
 FilePres << Pressure
 FileTemp << Temperature

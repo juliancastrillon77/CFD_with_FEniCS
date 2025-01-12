@@ -1,5 +1,5 @@
 # Julian Castrillon
-# 2D Steady Incompressible Re 133.3
+# Laminar flow Re 133.3
 
 import os
 import numpy as np
