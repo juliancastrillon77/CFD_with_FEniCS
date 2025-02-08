@@ -4,6 +4,8 @@
 
  ![Screen Shot 2024-03-04 at 9 56 50 PM](https://github.com/juliancastrillon77/CFD_with_FEniCS/assets/146413729/90bee105-f104-4750-a008-a34c76cd3723)
 
+ ![Screen Shot 2025-02-07 at 6 51 52 PM](https://github.com/user-attachments/assets/61608a96-d281-41e1-9b1f-e80ecad47051)
+
  Hello ! Welcome to my CFD repository.
  
 The objective of this repository is to embark on a computational odyssey where we harness the simplicity of Fenics to navigate the complexities of computational fluid dynamics (CFD).
