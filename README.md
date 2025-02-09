@@ -30,8 +30,8 @@ Gmsh:
 https://gmsh.info/
 
 Pressure along wall:
-![PressureTopWall](https://github.com/user-attachments/assets/d6e429ba-ee50-4be6-97e2-2a23d8fa2983)
+![PressureBottomWall](https://github.com/user-attachments/assets/e45dd818-5b3c-4a23-a2d8-d2d73448cdf9)
 
 Shear stress along wall:
-![ShearStressTopWall](https://github.com/user-attachments/assets/8a0e11b6-4d2d-443e-9532-391ccd064a20)
+![ShearStressBottomWall](https://github.com/user-attachments/assets/a1adca1f-f08f-4684-b646-5cabed10b172)
 
