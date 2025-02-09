@@ -2,7 +2,11 @@
 
  --- Results Gallery: https://drive.google.com/drive/folders/1iqLgXiIi73UaankAaU2uCSRX-CPFJ8cV?usp=sharing ---
 
+Velocity magnitude:
  ![Screen Shot 2024-03-04 at 9 56 50 PM](https://github.com/juliancastrillon77/CFD_with_FEniCS/assets/146413729/90bee105-f104-4750-a008-a34c76cd3723)
+
+Temperature:
+ ![Screen Shot 2025-02-07 at 6 51 52 PM](https://github.com/user-attachments/assets/61608a96-d281-41e1-9b1f-e80ecad47051)
 
  Hello ! Welcome to my CFD repository.
  
@@ -24,3 +28,10 @@ https://www.paraview.org/
 
 Gmsh:
 https://gmsh.info/
+
+Pressure along wall:
+![PressureBottomWall](https://github.com/user-attachments/assets/e45dd818-5b3c-4a23-a2d8-d2d73448cdf9)
+
+Shear stress along wall:
+![ShearStressBottomWall](https://github.com/user-attachments/assets/a1adca1f-f08f-4684-b646-5cabed10b172)
+
