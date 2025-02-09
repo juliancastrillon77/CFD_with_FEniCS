@@ -14,7 +14,7 @@ fe.parameters['form_compiler']['optimize']           = True
 fe.parameters['form_compiler']['cpp_optimize']       = True
 fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 
-Mesh = fe.Mesh('Mesh/2D Mesh/2DCircuit.xml')
+Mesh = fe.Mesh('Mesh/2D Mesh/2DChannelHeating.xml')
 
 URFu = 1 # Under relaxation factor for velocity
 URFp = 1 # Under relaxation factor for pressure
@@ -61,7 +61,7 @@ WeakForm = Mnt + Cnt + Egy
 
 J = fe.derivative(WeakForm, TFsol, TF)  
 
-DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DCircuit_facet_region.xml')
+DomainBoundaries = fe.MeshFunction('size_t', Mesh, 'Mesh/2D Mesh/2DChannelHeating_facet_region.xml')
 
 Entry      = 1
 BottomWall = 2
@@ -207,15 +207,15 @@ ShearStress.rename('ShearStress','ShearStress')
 Peclet.rename('Peclet','Peclet')
 DomainBoundaries.rename('DomainBoundaries','DomainBoundaries')
 
-fe.File('ResultsCircuitHT/Peclet.pvd')      << Peclet
-fe.File('ResultsCircuitHT/Velocity.xml')    << Velocity
-fe.File('ResultsCircuitHT/Pressure.xml')    << Pressure
-fe.File('ResultsCircuitHT/Reynolds.xml')    << Reynolds
-fe.File('ResultsCircuitHT/ShearStress.xml') << ShearStress
-fe.File('ResultsCircuitHT/Velocity.pvd')    << Velocity
-fe.File('ResultsCircuitHT/Pressure.pvd')    << Pressure
-fe.File('ResultsCircuitHT/Temperature.pvd') << Temperature
-fe.File('ResultsCircuitHT/Reynolds.pvd')    << Reynolds
-fe.File('ResultsCircuitHT/ShearStress.pvd') << ShearStress
-fe.File('ResultsCircuitHT/Boundaries.pvd')  << DomainBoundaries
+fe.File('Results/Peclet.pvd')      << Peclet
+fe.File('Results/Velocity.xml')    << Velocity
+fe.File('Results/Pressure.xml')    << Pressure
+fe.File('Results/Reynolds.xml')    << Reynolds
+fe.File('Results/ShearStress.xml') << ShearStress
+fe.File('Results/Velocity.pvd')    << Velocity
+fe.File('Results/Pressure.pvd')    << Pressure
+fe.File('Results/Temperature.pvd') << Temperature
+fe.File('Results/Reynolds.pvd')    << Reynolds
+fe.File('Results/ShearStress.pvd') << ShearStress
+fe.File('Results/Boundaries.pvd')  << DomainBoundaries
 

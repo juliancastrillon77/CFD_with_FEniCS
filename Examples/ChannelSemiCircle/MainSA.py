@@ -17,8 +17,8 @@ fe.parameters["form_compiler"]["cpp_optimize_flags"] = '-O2 -funroll-loops'
 Mesh = fe.Mesh('Mesh/2D Mesh/2DChannelSemiCircle.xml')
 
 # Fluid Properties
-mu  = fe.Constant(0.1)      # Dynamic viscosity  [kg/ms]
-rho = fe.Constant(10)       # Density            [kg/m3]
+mu  = fe.Constant(0.1)        # Dynamic viscosity  [kg/ms]
+rho = fe.Constant(10)         # Density            [kg/m3]
 b   = fe.Constant((0.0, 0.0)) # Body accelerations [m/s2]
 
 Vel   = fe.VectorElement('Lagrange', Mesh.ufl_cell(), 2)
@@ -192,19 +192,19 @@ ShearStress.rename('ShearStress','ShearStress')
 Peclet.rename('Peclet','Peclet')
 DomainBoundaries.rename('DomainBoundaries','DomainBoundaries')
 
-fe.File('Results Re 10t6/Peclet.pvd')       << Peclet
-fe.File('Results Re 10t6/Velocity.xml')     << Velocity
-fe.File('Results Re 10t6/Pressure.xml')     << Pressure
-fe.File('Results Re 10t6/Velocity.pvd')     << Velocity
-fe.File('Results Re 10t6/Pressure.pvd')     << Pressure
-fe.File('Results Re 10t6/ViscosityHat.pvd') << ViscosityHat
-fe.File('Results Re 10t6/Reynolds.xml')     << Reynolds
-fe.File('Results Re 10t6/ShearStress.xml')  << ShearStress
-fe.File('Results Re 10t6/Velocity.pvd')     << Velocity
-fe.File('Results Re 10t6/Pressure.pvd')     << Pressure
-fe.File('Results Re 10t6/Reynolds.pvd')     << Reynolds
-fe.File('Results Re 10t6/ShearStress.pvd')  << ShearStress
-fe.File('Results Re 10t6/Boundaries.pvd')   << DomainBoundaries
+fe.File('Results/Peclet.pvd')       << Peclet
+fe.File('Results/Velocity.xml')     << Velocity
+fe.File('Results/Pressure.xml')     << Pressure
+fe.File('Results/Velocity.pvd')     << Velocity
+fe.File('Results/Pressure.pvd')     << Pressure
+fe.File('Results/ViscosityHat.pvd') << ViscosityHat
+fe.File('Results/Reynolds.xml')     << Reynolds
+fe.File('Results/ShearStress.xml')  << ShearStress
+fe.File('Results/Velocity.pvd')     << Velocity
+fe.File('Results/Pressure.pvd')     << Pressure
+fe.File('Results/Reynolds.pvd')     << Reynolds
+fe.File('Results/ShearStress.pvd')  << ShearStress
+fe.File('Results/Boundaries.pvd')   << DomainBoundaries
 
 
 
