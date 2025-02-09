@@ -28,3 +28,10 @@ https://www.paraview.org/
 
 Gmsh:
 https://gmsh.info/
+
+Pressure along wall:
+![PressureTopWall](https://github.com/user-attachments/assets/d6e429ba-ee50-4be6-97e2-2a23d8fa2983)
+
+Shear stress along wall:
+![ShearStressTopWall](https://github.com/user-attachments/assets/8a0e11b6-4d2d-443e-9532-391ccd064a20)
+
