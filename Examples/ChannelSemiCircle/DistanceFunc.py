@@ -60,9 +60,10 @@ MinDist = fe.Function(FS)
 FinalVec = solutions[0].vector()[:]
 
 for sol in solutions[1:]:
-    FinalVec = np.minimum(FinalVec, sol.vector()[:])
+    FinalVec = np.minimum(FinalVec, sol.vector()[:])*fe.Constant(13.15)
 
 MinDist.vector().set_local(FinalVec)
+
 
 # d = fe.sqrt(fe.assemble(fe.dot(fe.grad(MinDist),fe.grad(MinDist))*fe.dx)+2*MinDist) \
 #   - fe.sqrt(fe.assemble(fe.dot(MinDist,MinDist)*fe.dx))

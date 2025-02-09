@@ -50,8 +50,10 @@ cw1   = (cb1/(k**2))+((1.0+cb2)/(sigma))
 #d = fe.Constant(0.05)
 
 dspace = fe.FunctionSpace(Mesh, 'Lagrange', 1)
-d = fe.Function(dspace)
-fe.File('Results/Distance.xml') >> d
+dist = fe.Function(dspace)
+fe.File('Results/Distance.xml') >> dist
+
+d    = 0.05 #fe.conditional(fe.le(dist,0.01), 0.05, dist)
 
 X       = nuhat/mu
 fv1     = (X**3)/((X**3)+(cv1**3))
@@ -59,10 +61,8 @@ nutr    = fv1*nuhat
 fv2     = 1-(X/(1+(X*fv1)))
 RotTnsr = 0.5*(fe.grad(u)-fe.grad(u).T)
 Omega   = fe.sqrt(2*fe.inner(RotTnsr,RotTnsr))
-#Shat    = Omega+fv2*nuhat/((k**2)*(d**2))
 Shat    = fe.conditional(fe.le(Omega+fv2*nuhat/((k**2)*(d**2)),0.3*Omega), 0.3*Omega, Omega+fv2*nuhat/((k**2)*(d**2)))
-#r       = nuhat/(Shat*(k**2)*(d**2))
-r       = fe.conditional(fe.le(nuhat/(Shat*(k**2)*(d**2)),10),10,nuhat/(Shat*(k**2)*(d**2)))
+r       = fe.conditional(fe.le(nuhat/(Shat*(k**2)*(d**2)),10),nuhat/(Shat*(k**2)*(d**2)),10)
 ft2     = ct3*fe.exp(-ct4*(X**2))
 g       = r+cw2*((r**6)-r)
 fw      = g*((1+(cw3**6))/((g**6)+(cw3**6)))**(1.0/6.0)
@@ -136,16 +136,16 @@ Parameters['newton_solver']['maximum_iterations']   = 1
 Parameters['newton_solver']['relaxation_parameter'] = 0.5
 Parameters['newton_solver']['error_on_nonconvergence'] = False
 
-URFu = 0.9
-URFp = 0.9
-URFnuhat = 0.9
+URFu = 1
+URFp = 1
+URFnuhat = 1
 
 TFsol_prev = fe.Function(FS)
 (u_prev, p_prev, nuhat_prev) = TFsol_prev.split()
 TFsol_relaxed = fe.Function(FS)
 (u_relaxed, p_relaxed, nuhat_relaxed) = TFsol_relaxed.split()
 
-Total_iterations = 8
+Total_iterations = 20
 for i in range(Total_iterations):
       print(f"\nIteration {i+1}: \n")
       Solver.solve()
@@ -163,8 +163,6 @@ for i in range(Total_iterations):
       u_prev = u_relaxed
       p_prev = p_relaxed
       nuhat_prev = nuhat_relaxed
-
-      print(g)
 
       if i == Total_iterations - 1:
             print("Reached maximum limit of iterations")

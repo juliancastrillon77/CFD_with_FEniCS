@@ -50,8 +50,6 @@ BoundaryLayer Field = 1;
 // Field[2].YMax = 0.1;
 // Background Field = 2;
 
-
-
 Mesh 2;
 Save "2DChannelSemiCircle.msh";
 

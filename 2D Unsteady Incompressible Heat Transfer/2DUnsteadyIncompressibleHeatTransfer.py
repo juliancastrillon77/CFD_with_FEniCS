@@ -27,15 +27,16 @@ t_end = 10   # Length of simulation [s]
 vi = 0.5 # Inlet Velocity [m/s]
 T1 = 340 # Temperature 1  [K]
 T2 = 273 # Temperature 2  [K] 
-# Air Properties at 25ºC 1atm
-mu  = fe.Constant(1/500)  # Dynamic viscosity                [kg/ms]
-k   = fe.Constant(0.1)    # Thermal conductivity             [W/mK]
-cp  = fe.Constant(100)    # Heat capacity constant pressure  [J/kgK]
-cv  = fe.Constant(718)    # Heat capacity constant volume    [J/kgK]
-RR  = fe.Constant(287)    # Gas constant                     [J/kgK]
-B   = fe.Constant(1)      # Coefficient of thermal expansion [-]
-b   = fe.Constant((0, 0)) # Body accelerations               [m/s2]
-rho = fe.Constant(1)      # Density                          [kg/m3]
+
+## Air Properties at 25ºC 1atm
+#mu  = fe.Constant(0.00001825) # Dynamic viscosity              [kg/ms]
+mu  = fe.Constant(0.01825)    # Dynamic viscosity               [kg/ms]
+rho = fe.Constant(1.225)      # Density                         [kg/m3]
+k   = fe.Constant(0.02551)    # Thermal conductivity            [W/mK]
+cp  = fe.Constant(1007)       # Heat capacity constant pressure [J/kgK]
+cv  = fe.Constant(718)        # Heat capacity constant volume   [J/kgK]
+RR  = fe.Constant(287)        # Gas constant                    [J/kgK]
+b   = fe.Constant((0, 0))     # Body accelerations              [m/s2]
 
 theta = fe.Constant(0.5)      # Crank-Nicholson time-stepping scheme
 n     = fe.FacetNormal(Mesh)  # Normal vector  
@@ -51,40 +52,43 @@ FS   = fe.FunctionSpace(Mesh, M) # Function space
 TF        = fe.TrialFunction(FS) # Trial function
 (w, q, s) = fe.TestFunctions(FS) # Test  functions
 
-#################################################################################################
-## Weak formulation #############################################################################
 TFsol     = fe.Function(FS) # Timestep n+1
 (u, p, T) = fe.split(TFsol)
 
-WeakFormB =   fe.dot(w*rho,fe.grad(u)*u)*fe.dx         \
-            - fe.div(w)*p*fe.dx                        \
-            - fe.dot(w*rho,b)*fe.dx                    \
-            + mu*fe.inner(fe.grad(w),fe.grad(u))*fe.dx \
-            \
-            \
-            + q*fe.div(u)*fe.dx \
-            \
-            \
-            - s*fe.dot(u,fe.grad(p))*fe.dx                      \
-            + (cp/(k))*rho*fe.dot(s,fe.dot(u,fe.grad(T)))*fe.dx \
-            + fe.dot(fe.grad(s),fe.grad(T))*fe.dx               \
+S = 0.5*(fe.grad(u)+fe.grad(u).T)      # Strain rate tensor
+I = fe.Identity(Mesh.topology().dim()) # Identity tensor
+Cst = -(p*I)+(2*mu*S)                  # Cauchy stress tensor
+
+dx = fe.dx(metadata={"quadrature_degree":4})
+
+Mnt = fe.inner(w,fe.grad(rho*u)*u)*dx \
+    - fe.dot(w,(rho*b))*dx            \
+    + fe.inner(fe.grad(w),Cst)*dx
+
+Cnt = q*fe.div(rho*u)*dx
+
+Egy = s*rho*cp*fe.dot(u,fe.grad(T))*dx    \
+    + fe.dot(fe.grad(s), k*fe.grad(T))*dx 
+
+WeakFormB = Mnt + Cnt + Egy
 
 TFsol0       = fe.Function(FS) # Timestep n
 (u0, p0, T0) = fe.split(TFsol0)
 
-WeakFormF =   fe.dot(w*rho,fe.grad(u0)*u0)*fe.dx        \
-            - fe.div(w)*p*fe.dx                         \
-            - fe.dot(w*rho,b)*fe.dx                     \
-            + mu*fe.inner(fe.grad(w),fe.grad(u0))*fe.dx \
-            \
-            \
-            + q*fe.div(u0)*fe.dx \
-            \
-            \
-            - s*fe.dot(u0,fe.grad(p))*fe.dx                        \
-            + (cp/(k))*(rho)*fe.dot(s,fe.dot(u0,fe.grad(T)))*fe.dx \
-            + fe.dot(fe.grad(s),fe.grad(T))*fe.dx
-                
+S0 = 0.5*(fe.grad(u0)+fe.grad(u0).T)      # Strain rate tensor
+Cst0 = -(p*I)+(2*mu*S0)                   # Cauchy stress tensor
+
+Mnt0 = fe.inner(w,fe.grad(rho*u0)*u0)*dx \
+     - fe.dot(w,(rho*b))*dx            \
+     + fe.inner(fe.grad(w),Cst0)*dx
+
+Cnt0 = q*fe.div(rho*u0)*dx
+
+Egy0 = s*rho*cp*fe.dot(u0,fe.grad(T))*dx    \
+     + fe.dot(fe.grad(s), k*fe.grad(T))*dx 
+
+WeakFormF = Mnt0 + Cnt0 + Egy0
+          
 WeakForm = fe.inner((u-u0)/dt,w)*fe.dx + (theta)*WeakFormB + (1-theta)*WeakFormF
 
 ### Streamwise Upwind Petrov Galerkin (SUPG) stabilization for convection #######################
@@ -126,7 +130,7 @@ R = (u-u0)/dt                \
 #    + fe.grad(P)             \
 #    - b)
 
-WeakForm += tau*fe.inner(fe.grad(w)*u0,R)*fe.dx(metadata={'quadrature_degree':8})
+#WeakForm += tau*fe.inner(fe.grad(w)*u0,R)*fe.dx(metadata={'quadrature_degree':8})
 
 # Petrov Galerkin Pressure Stabilzation (PSPG) stabilization for pressure field // The Ladyzhenskaya-Babuska-Brezzi condition not met
 # WeakForm += -tau*fe.inner(fe.grad(s),R)*fe.dx(metadata={'quadrature_degree':8})
@@ -148,9 +152,9 @@ TriangleRight = 14
 
 NoSlip    = fe.Constant((0, 0))
 POut      = fe.Constant(0)
-InletFlow = fe.Constant((vi, 0))
-Temp1     = fe.Constant(T1)
-Temp2     = fe.Constant(T2)
+InletFlow = fe.Expression(['6*x[1]*(1-x[1])','0'], degree=2)
+Temp1     = fe.Constant(400)
+Temp2     = fe.Constant(273)
 
 EntryBC          = fe.DirichletBC(FS.sub(0), InletFlow, DomainBoundaries, Entry)
 BottomWallBC     = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, BottomWall)
@@ -162,23 +166,16 @@ TriangleRightBC  = fe.DirichletBC(FS.sub(0), NoSlip,    DomainBoundaries, Triang
 
 EntryBCT         = fe.DirichletBC(FS.sub(2), Temp2,     DomainBoundaries, Entry)
 BottomWallBCT    = fe.DirichletBC(FS.sub(2), Temp2,     DomainBoundaries, BottomWall)
-ExitBCT          = fe.DirichletBC(FS.sub(2), Temp2,     DomainBoundaries, Exit)
 TopWallBCT       = fe.DirichletBC(FS.sub(2), Temp2,     DomainBoundaries, TopWall)
 CircleBCT        = fe.DirichletBC(FS.sub(2), Temp1,     DomainBoundaries, Circle)
 TriangleLeftBCT  = fe.DirichletBC(FS.sub(2), Temp1,     DomainBoundaries, TriangleLeft)
 TriangleRightBCT = fe.DirichletBC(FS.sub(2), Temp1,     DomainBoundaries, TriangleRight)
 
 BCs = [EntryBC,  BottomWallBC,  ExitBC,  TopWallBC,  CircleBC,  TriangleLeftBC,  TriangleRightBC, \
-       EntryBCT, BottomWallBCT, ExitBCT, TopWallBCT, CircleBCT, TriangleLeftBCT, TriangleRightBCT]
+       EntryBCT, BottomWallBCT, TopWallBCT, CircleBCT, TriangleLeftBCT, TriangleRightBCT]
 
-## Boundary check
-# import sys
-# fe.File('New.pvd') << DomainBoundaries
-# sys.exit()
-
-## Initial conditions
-InitialVel  = fe.interpolate(fe.Constant((fe.Constant(1.5), fe.Constant(0.2))), FS.sub(0).collapse()) 
-InitialPres = fe.interpolate(fe.Constant(1e-3), FS.sub(1).collapse())
+InitialVel  = fe.interpolate(fe.Constant((fe.Constant(0.1), fe.Constant(0.1))), FS.sub(0).collapse()) 
+InitialPres = fe.interpolate(fe.Constant(0.1), FS.sub(1).collapse())
 InitialTemp = fe.interpolate(fe.Constant(273),  FS.sub(1).collapse())
 
 fe.assign(TFsol.sub(0),  InitialVel)
@@ -194,6 +191,7 @@ Problem = fe.NonlinearVariationalProblem(WeakForm, TFsol, BCs, J)
 Solver  = fe.NonlinearVariationalSolver(Problem)
 
 Parameters = Solver.parameters
+Parameters['newton_solver']['linear_solver'] = 'mumps'
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
 Parameters['newton_solver']['relative_tolerance']   = 1e-7
 Parameters['newton_solver']['absolute_tolerance']   = 1e-8
